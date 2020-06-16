@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<!-- saved from url=(0081)https://storage.googleapis.com/static.reachbeta.com.br/storelocator/index.html?aa -->
+<html lang="pt"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>TIM - Store Locator</title>
+    <!-- Required meta tags -->
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+     <!-- Favicon & Icons -->
+    <link rel="apple-touch-icon" href="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/responsivo/img/icones/touch-icon-iphone.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/responsivo/img/icones/touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/responsivo/img/icones/touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/responsivo/img/icones/touch-icon-152x152.png">    
+    <link rel="shortcut icon" href="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/img/ico/favicon.ico" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/widget-omni/bootstrap-extended.min.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/widget-omni/colors.min.css">
+
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+    
+    <!-- Animate CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.0.0/animate.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/storelocator/style.css">
+
+    
+
+  </head>
+  <body class="overflow-hidden bg-light" style="height: 100vh">
+  
+    <!-- Header Inicio -->
+    <header class="bg-timblue d-flex justify-content-center align-items-center" style="height: 70px;">
+        <img src="https://www.tim.com.br/Portal_Conteudo/_staticfiles/dpmFiles/responsivo/img/cabecalho-logo-completo.png" class="">
+    </header>
+    <!-- Header Fim -->
+
+    <div class="container-fluid">
+        <!-- Main Inicio -->
+        <main class="row vh-90">
+            <div class="col-sm-4 col-12 bg-white p-0 shadow animate__animated animate__fadeInLeft" id="sidebar">
+
+                <div class="row p-3" id="filtros">
+                    <div class="col">
+                        <button onclick="filterStores()" type="button" class="btn btn-block btn-lg btn-timbluelight shadow text-bold-600 mb-3">Encontrar loja mais próxima <i class="fas fa-map-marker-alt"></i></button>
+                        <div class="input-group form-group mb-3">
+                            <input type="text" class="form-control form-control-lg shadow-sm" onkeyup="check_clear_filter(this.value);" id="autocomplete" placeholder="Onde você está?">
+                            <button onclick="clear_input_search()"class="btn bg-transparent" style="margin-left: -40px; z-index: 100;">
+                              <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <h2 class="h6 pl-2">Compre agora direto com a loja 😉</h2>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column overflow-auto ml-3" id="listagem">
+                </div>
+            </div>
+            <div class="col-sm-8 col-12 bg-light d-sm-block d-none" id="banner">
+            </div>
+        </main>
+        <!-- Main Fim -->
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+     <script>
+        // This sample uses the Autocomplete widget to help the user select a
+        // place, then it retrieves the address components associated with that
+        // place, and then it populates the form fields with those details.
+        // This sample requires the Places library. Include the libraries=places
+        // parameter when you first load the API. For example:
+        // <script
+        // src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+
+        window.onload = function(){
+            requestFranchises();
+            window.addEventListener('load', alturaListagem);
+            window.addEventListener('resize', alturaListagem);
+        };
+        
+        var  autocomplete;
+
+        
+
+        function initAutocomplete() {
+          // Create the autocomplete object, restricting the search predictions to
+          // geographical location types.
+          autocomplete = new google.maps.places.Autocomplete(
+              document.getElementById('autocomplete'), {types: ['geocode'],
+                componentRestrictions: {country: 'br'}});
+
+          // Avoid paying for data that you don't need by restricting the set of
+          // place fields that are returned to just the address components.
+          autocomplete.setFields(['address_component',  'geometry']);
+
+          // When the user selects an address from the drop-down, populate the
+          // address fields in the form.
+          autocomplete.addListener('place_changed', fillInAddress);
+        }
+
+        function fillInAddress() {
+          // Get the place details from the autocomplete object.
+          var place = autocomplete.getPlace();
+          getNearestFranchise(place.geometry.location.lat(), place.geometry.location.lng());
+         
+        }
+
+        // Bias the autocomplete object to the user's geographical location,
+        // as supplied by the browser's 'navigator.geolocation' object.
+        function geolocate() {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              var geolocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              };
+              var circle = new google.maps.Circle(
+                  {center: geolocation, radius: position.coords.accuracy});
+              autocomplete.setBounds(circle.getBounds());
+            });
+          }
+        }
+        
+        function clear_input_search(){
+            document.getElementById("autocomplete").value = '';
+            var target = document.getElementById("listagem");
+            resetFranchiseList();
+
+        }
+
+        function check_clear_filter(input) {
+            if (input.length == 0) {
+                resetFranchiseList();
+            }
+
+        }
+
+        function resetFranchiseList() {
+            clearFranchisesList();
+            fillFranchisesList();
+        }
+
+        function distanceTwoPoints(x1, x2){
+          return (google.maps.geometry.spherical.computeDistanceBetween(x1, x2) ); 
+        }
+
+        
+
+        function requestFranchises() {
+            var url = 'https://spreadsheets.google.com/feeds/list/1JNDTYmEHn4jnYFIpeddXUJxmhNjLl3J4qDjrWFv8vbs/od6/public/values?alt=json';
+            var request = new XMLHttpRequest();
+            request.open('GET', url, true);
+
+            request.onload = function() {
+              if (this.status >= 200 && this.status < 400) {
+                // Success!
+                var data = JSON.parse(this.response);
+                window.result = data.feed.entry;
+                fillFranchisesList();
+
+              } else {
+                // We reached our target server, but it returned an error
+
+              }
+            };
+
+            request.onerror = function() {
+              // There was a connection error of some sort
+            };
+
+            request.send();;
+        }
+        
+        
+
+        function getNearestFranchise(lat, lng) {
+            var userLocation = new google.maps.LatLng(lat, lng);
+            var distances = [];
+            for (var i = 0; i < window.result.length; i++) {
+                var franchiseLocation = new google.maps.LatLng(window.result[i].gsx$latitude.$t, window.result[i].gsx$longitude.$t);
+                distances[i] = distanceTwoPoints(userLocation, franchiseLocation);
+            }
+            
+            distancesSorted = Array.prototype.slice.call(distances).sort(function(a,b) { return a - b;});  
+            clearFranchisesList();
+            for(var i=0;i<distances.length;i++) {
+                var index = distances.indexOf(distancesSorted[i]);
+                addFranchiseToList(window.result[index]);
+            }
+            
+            
+        }
+
+        function clearFranchisesList() {
+            var target = document.getElementById("listagem");
+            target.innerHTML = '';
+        }
+
+        function fillFranchisesList() {
+            for (var i = 0; i < window.result.length; i++) {
+                addFranchiseToList(window.result[i]);
+            }
+        }
+
+        function addFranchiseToList(franchise) {
+            var target = document.getElementById("listagem");
+            var div = htmlToElement(createFranchiseCard(franchise));
+            target.appendChild(div);
+        }
+
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); 
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+
+        function filterStores() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(filterFranchisesByUserLocation);
+            } else {
+                alert("Seu navegador não suporta esse recurso. Insira seu endereço no campo de busca abaixo.")
+            }
+        }
+
+        function filterFranchisesByUserLocation(position) {
+            getNearestFranchise(position.coords.latitude, position.coords.longitude);
+        }
+
+        function alturaListagem() {
+            var body = $('body').outerHeight();
+            var header = $('header').outerHeight();
+            var filtros = $('#filtros').outerHeight();
+            var diferenca = (header += filtros);
+            var alturaListagem = (body - diferenca);
+            $('#listagem').attr('style', 'height:' + alturaListagem + 'px;');
+        }
+
+        function createFranchiseCard(item) {
+            var name = item.gsx$loja.$t;
+            var address = item.gsx$endereço.$t;
+            var latitude = item.gsx$latitude.$t;
+            var longitude = item.gsx$longitude.$t;
+            var whatsapp = item.gsx$whatsapp.$t;
+            var phone = item.gsx$telefone.$t;
+            return `
+                <div class="card shadow-sm mb-1 mr-3">
+                        <div class="card-content">
+                            <div class="card-body">
+                                <h3 class="font-small-3">${name}</h3>
+                                <p class="font-small-1 mb-3 address" data-lat="${latitude}" data-lng="${longitude}">${address}</p>
+                                <div class="d-flex flex-row ">
+                                    <a  href="tel:${phone}" target="_blank"class="btn btn-store rounded-circle btn-timbluelight border-0 mr-2 shadow-sm"><i class="fas fa-phone-alt"></i></a>
+                                    <a href="https://wa.me/55${whatsapp}" target="_blank" class="btn btn-store rounded-circle btn-success border-0 mr-2 shadow-sm"><i class="fab fa-whatsapp"></i></a>
+                                    <a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${address}&travelmode=driving" class="btn btn-store rounded-circle btn-timred border-0 white mr-2 shadow-sm"><i class="fab fas fa-map-marker-alt"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            `;
+        }
+
+        </script>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDdvnQY1uhCL2mofWKYm7ATrP3pEhiy3Nw&libraries=places,geometry&callback=initAutocomplete"
+        async defer></script>
+</body></html>
