@@ -1,0 +1,444 @@
+
+
+
+<!DOCTYPE html>
+<html lang="pt">
+    <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PJWXJTJ');</script>
+    <!-- End Google Tag Manager -->
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Store Locator</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Favicon & Icons -->
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/storelocator/bootstrap-extended.min.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/storelocator/colors.min.css">
+
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+    
+    <!-- Animate CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.0.0/animate.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="https://storage.googleapis.com/static.reachbeta.com.br/storelocator/storelocator.css">
+
+    <style>
+        .btn-store {line-height: 30px;}
+    </style>
+  
+  <body style="height: 100vh">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PJWXJTJ"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+  
+    <!-- Header Inicio -->
+    <header class="d-flex justify-content-sm-center justify-content-between align-items-center px-3" style="height: 60px; border-bottom: 1px solid #ccc; background: #ffa500;">
+        <div></div>
+        <img id="logo" src="https://www.conti.com.br/www8/resources/image/continental_logo-9e4b34b69f.svg" class="" style="max-height: 45px;">
+        <a style="width: 40px;" onclick="mostraMapa()" id="btn-mapa" class="border-0 d-sm-none text-right"><i class="fas fa-map-marked-alt" style="top:0; font-size: 180%; color: #fff;"></i></a>
+    </header>
+    <!-- Header Fim -->
+
+    <div class="container-fluid">
+        <!-- Main Inicio -->
+        <main class="row vh-100">
+            <div class="col-sm-4 col-12 p-0" id="sidebar" style="background-color: #ededed;">
+                <div class="row p-3" id="filtros" style="height: 170px;">
+                    <div class="col">
+                        <button onclick="filterStores()" type="button" class="font-medium-1 p-2 btn btn-block btn-lg btn-dark shadow text-bold-600 mb-3">Encontre a loja mais próxima <i class="fas fa-map-marker-alt"></i></button>
+                        <input type="text" class="form-control form-control-lg shadow-sm" onkeyup="check_clear_filter(this.value);" id="autocomplete" placeholder="Onde você está?">
+                        <h2 class="h6 pl-2 py-1" id="message">Compre agora direto com a loja</h2>
+                    </div>
+                </div>
+                <div class="d-flex flex-column overflow-auto ml-3 pb-4" id="listagem"></div>
+            </div>
+            <div class="col-sm-8 col-12 bg-light px-0" id="map"></div>
+        </main>
+        <!-- Main Fim -->
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+
+    var logo;
+    var textobotao;
+    var textobotao2;
+    var idplanilha;
+
+    window.url = 'https://spreadsheets.google.com/feeds/list/1XbOFlJ0PHPxv_RAZrUWTbGnxjlBe5O57YS9VUqvBRxM/od6/public/values?alt=json';
+        
+        function init () {
+            requestFranchises();
+            if ($(window).width() < 480) {
+                window.addEventListener('load', alturaListagemMobile);
+            }
+            else {
+                window.addEventListener('load', alturaListagem);
+            }
+        };
+
+        function mostraMapa() {
+            if(document.getElementById("map").children.length == 0) {
+                initMap();
+            }
+            
+            $("#sidebar").hide(function(){$("#map").slideDown(700)});
+            $("#btn-mapa").attr('onclick', 'escondeMapa()');
+            $("#btn-mapa i").attr('class', 'fas fa-times');   
+        }
+
+        function escondeMapa() {
+            $("#map").slideUp(700, function(){$("#sidebar").show();});
+            $("#btn-mapa").attr('onclick', 'mostraMapa()');
+            $("#btn-mapa i").attr('class', 'fas fa-map-marked-alt');     
+        }
+       
+        var  autocomplete;
+
+        function initAutocomplete() {
+          // Create the autocomplete object, restricting the search predictions to
+          // geographical location types.
+          autocomplete = new google.maps.places.Autocomplete(
+              document.getElementById('autocomplete'), {types: ['geocode'],
+                componentRestrictions: {country: 'br'}});
+
+          // Avoid paying for data that you don't need by restricting the set of
+          // place fields that are returned to just the address components.
+          autocomplete.setFields(['address_component',  'geometry']);
+
+          // When the user selects an address from the drop-down, populate the
+          // address fields in the form.
+          autocomplete.addListener('place_changed', fillInAddress);
+        }
+
+        function fillInAddress() {
+          // Get the place details from the autocomplete object.
+          var place = autocomplete.getPlace();
+          getNearestFranchise(place.geometry.location.lat(), place.geometry.location.lng());
+         
+        }
+
+        // Bias the autocomplete object to the user's geographical location,
+        // as supplied by the browser's 'navigator.geolocation' object.
+        function geolocate() {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              var geolocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              };
+              var circle = new google.maps.Circle(
+                  {center: geolocation, radius: position.coords.accuracy});
+              autocomplete.setBounds(circle.getBounds());
+            });
+          }
+        }
+        
+        function clear_input_search(){
+            document.getElementById("autocomplete").value = '';
+            var target = document.getElementById("listagem");
+            resetFranchiseList();
+
+        }
+
+        function check_clear_filter(input) {
+            if (input.length == 0) {
+                resetFranchiseList();
+            }
+
+        }
+
+        function resetFranchiseList() {
+            clearFranchisesList();
+            fillFranchisesList();
+        }
+
+        function distanceTwoPoints(x1, x2){
+          return (google.maps.geometry.spherical.computeDistanceBetween(x1, x2) ); 
+        }
+
+        function requestFranchises() {
+            var url = window.url;
+            var request = new XMLHttpRequest();
+            request.open('GET', url, true);
+
+            request.onload = function() {
+              if (this.status >= 200 && this.status < 400) {
+                var data = JSON.parse(this.response);
+                window.result = data.feed.entry;
+                if ($(window).width() > 480) {
+                   initMap(); 
+                }
+                initAutocomplete();
+                fillFranchisesList();
+                filterStores();
+              } 
+            };
+            
+            request.send();;
+        }
+        
+        
+
+        function getNearestFranchise(lat, lng) {
+            var userLocation = new google.maps.LatLng(lat, lng);
+            var distances = [];
+
+            for (var i = 0; i < window.result.length; i++) {
+                var franchiseLocation = new google.maps.LatLng(window.result[i].gsx$latitude.$t, window.result[i].gsx$longitude.$t);
+                distances[i] = distanceTwoPoints(userLocation, franchiseLocation);
+            }
+            
+            distancesSorted = Array.prototype.slice.call(distances).sort(function(a,b) { return a - b;});  
+            clearFranchisesList();
+            for(var i=0;i<distances.length;i++) {
+                var index = distances.indexOf(distancesSorted[i]);
+                addFranchiseToList(window.result[index]);
+            }
+
+            var index = distances.indexOf(distancesSorted[0]);
+            legendCenter(window.result[index].gsx$latitude.$t, window.result[index].gsx$longitude.$t);
+            
+            
+        }
+
+        function clearFranchisesList() {
+            var target = document.getElementById("listagem");
+            target.innerHTML = '';
+        }
+
+        function fillFranchisesList() {
+            for (var i = 0; i < window.result.length; i++) {
+                addFranchiseToList(window.result[i]);
+            }
+        }
+
+        function addFranchiseToList(franchise) {
+            var target = document.getElementById("listagem");
+            var div = htmlToElement(createFranchiseCard(franchise));
+            target.appendChild(div);
+        }
+
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); 
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+
+        function filterStores() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(filterFranchisesByUserLocation);
+            } else {
+                alert("Seu navegador não suporta esse recurso.")
+            }
+        }
+
+        function filterFranchisesByUserLocation(position) {
+            getNearestFranchise(position.coords.latitude, position.coords.longitude);
+        }
+
+        function alturaListagem() {
+            var body = $('body').outerHeight();
+            var header = $('header').outerHeight();
+            var filtros = $('#filtros').outerHeight();
+            var mapa = $('#mapa').outerHeight();
+            var diferenca = (header += filtros);
+            var alturaListagem = (body - diferenca);
+            $('#listagem').attr('style', 'height:' + alturaListagem + 'px;');
+            var alturaMapa = (body - 60);
+            $('#map').attr('style', 'height:' + alturaMapa + 'px;');
+        }
+
+        function alturaListagemMobile() {
+            var body = $('body').outerHeight();
+            var mapa = $('#mapa').outerHeight();
+            var alturaMapa = (body - 60);
+            $('#mapa iframe').attr('style', 'height:' + alturaMapa + 'px;');
+        }
+
+        function eventGa(store, event) {
+            var message = JSON.stringify ({
+                            event: event,
+                            data: store
+                        });
+            window.parent.postMessage(message, "*");
+            ga('stores.send', 'event', store, 'click', event)
+        }
+
+        function createFranchiseCard(item) {
+            var name = item.gsx$loja.$t
+            var address = item.gsx$endereço.$t;
+            var latitude = item.gsx$latitude.$t;
+            var longitude = item.gsx$longitude.$t;
+            var whatsapp = item.gsx$whatsapp.$t;
+            var phone = item.gsx$telefone.$t;
+            var email = item.gsx$email.$t;
+
+            return `
+                    <div class="card shadow-sm my-1 mr-3 mr-sm-2 loja rounded">
+                        <div class="card-content">
+                            <div class="card-body">
+                                <a href="#" onClick="legendCenter(${latitude}, ${longitude})";return false;">
+                                <h3 class="font-small-3">Continental - ${name}</h3>
+                                <p class="font-small-1 mb-1 address" data-lat="${latitude}" data-lng="${longitude}"><i class="fas fa-map-marker-alt"></i> ${address}</p>
+                                </a>
+                            ${createActionRow(item)}    
+                            </div>
+                        </div>
+                    </div>
+            `;
+        }
+
+        function createActionRow(item) {
+            if(item.gsx$whatsapp.$t){ var showWhats = '' } else { var showWhats = 'd-none'}
+            return `<div class="row">
+                        <div class="col-12">
+                        <div class="d-flex flex-row">
+
+                            <a onclick="eventGa('${item.gsx$loja.$t}', 'whatsapp')" href="https://wa.me/55${item.gsx$whatsapp.$t}" target="_blank" class="${showWhats} btn btn-store rounded-circle btn-success border-0 mr-2 shadow-sm"><i class="fab fa-whatsapp"></i></a>
+
+                            <a onclick="eventGa('${item.gsx$loja.$t}', 'phone')" href="tel:0${item.gsx$telefone.$t}" class="btn btn-store rounded-circle btn-info border-0 mr-2 shadow-sm"><i class="fas fa-phone-alt"></i></a>
+
+                            <a onclick="eventGa('${item.gsx$loja.$t}', 'maps')" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${item.gsx$endereço.$t}&travelmode=driving" class="btn btn-store rounded-circle btn-red border-0 mr-2 shadow-sm"><i class="fas fa-map-marker-alt"></i></a>
+                        </div>
+                        </div>
+                    </div>`
+        }
+
+
+    var map;
+    var markers = [];
+    
+
+    function legendCenter(lat, long) {
+        if(document.getElementById("map").children.length == 0) {
+                initMap();
+            }
+        marker = markers.filter(function (e) {
+                    return e.position.equals(new google.maps.LatLng(lat, long));
+                });
+        var location = new google.maps.LatLng(lat, long);
+        map.setCenter(location);
+        map.setZoom(13);
+        google.maps.event.trigger(marker[0], 'click');
+        return false;
+    }
+
+    function clearMarkers() {
+        for (var i = 0; i < markers.length; i++) {
+            markers[i].setMap(null);
+        }
+    }
+
+    function setAllMarkers(result) {
+        var marker = [];
+        var infowindow = [];
+        var prev_infowindow;
+        var row = result;
+
+        for (var i = 0; i < result.length; i++) {
+            var name = row[i].gsx$loja.$t + " - " + row[i].gsx$cidade.$t + " - " + row[i].gsx$estado.$t;
+            var contentString = `<h4 class='font-small-3'>Continental - ${row[i].gsx$loja.$t}</h4>` + `<p class="font-small-1 mb-3 address" data-lat="${row[i].gsx$latitude.$t}" data-lng="${row[i].gsx$longitude.$t}"><i class="fas fa-map-marker-alt"></i> ${row[i].gsx$endereço.$t}</p>` + createActionRow(row[i]);
+            var geoTarget = row[i].gsx$geotarget.$t;
+            var infowindow = new google.maps.InfoWindow();
+            var latLng = new google.maps.LatLng(row[i].gsx$latitude.$t, row[i].gsx$longitude.$t);
+            var iconTim = 'https://irp-cdn.multiscreensite.com/cbc77501/dms3rep/multi/pins-Tim.png';
+            marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: name
+            });
+            marker.circle = new google.maps.Circle({
+                strokeColor: '#5A8ECE',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#5A8ECE',
+                fillOpacity: 0.3,
+                map: map,
+                center: latLng,
+                radius: parseInt(geoTarget)
+            });
+          
+            removeCircle(marker);
+            google.maps.event.addListener(marker, 'click', (function(marker, contentString, infowindow) {
+                return function() {
+                    if (prev_infowindow) {
+                        prev_infowindow.close();
+                    }
+                    prev_infowindow = infowindow;
+                    infowindow.setContent(contentString);
+                    infowindow.open(map, marker);
+                };
+            })(marker, contentString, infowindow));
+            google.maps.event.addListener(marker, 'mouseover', (function(marker) {
+                return function() {
+                    addCircle(marker);
+                };
+            })(marker));
+            google.maps.event.addListener(marker, 'mouseout', (function(marker) {
+                return function() {
+                    removeCircle(marker);
+                };
+            })(marker));
+            markers.push(marker);
+
+            function addCircle(marker) {
+                marker.circle.setMap(map);
+            }
+
+            function removeCircle(marker) {
+                marker.circle.setMap(null);
+            }
+        }
+    }
+
+  
+
+    function addCircle(marker) {
+        marker.circle.setMap(map);
+    }
+
+    function removeCircle(marker) {
+        marker.circle.setMap(null);
+    }
+
+    function initMap(callback) {
+            var j = 0;
+            var marker = [];
+            var infowindow = [];
+            var prev_infowindow;
+            
+            map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 7,
+            center: new google.maps.LatLng(window.result[0].gsx$latitude.$t
+                ,window.result[0].gsx$longitude.$t),
+            mapTypeId: 'terrain'
+        });
+            setAllMarkers(window.result);
+            if(callback) {
+                callback();
+            }
+        
+    }
+        </script>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDdvnQY1uhCL2mofWKYm7ATrP3pEhiy3Nw&libraries=places,geometry&callback=init"
+        async defer></script>
+</body></html>
