@@ -175,13 +175,13 @@
             request.onload = function() {
               if (this.status >= 200 && this.status < 400) {
                 var data = JSON.parse(this.response);
-                window.result = data.feed.entry;
+                window.result = data.feed.entry.slice(450);
                 if ($(window).width() > 480) {
                    initMap(); 
                 }
                 initAutocomplete();
                 fillFranchisesList();
-                //filterStores();
+                filterStores();
               } 
             };
             
