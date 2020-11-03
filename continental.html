@@ -181,7 +181,7 @@
                 }
                 initAutocomplete();
                 fillFranchisesList();
-                setTimeout(function(){ filterStores() }, 3000);
+                //filterStores();
               } 
             };
             
@@ -191,22 +191,22 @@
         
 
         function getNearestFranchise(lat, lng) {
-            // var userLocation = new google.maps.LatLng(lat, lng);
-            // var distances = [];
+            var userLocation = new google.maps.LatLng(lat, lng);
+            var distances = [];
 
-            // for (var i = 0; i < window.result.length; i++) {
-            //     var franchiseLocation = new google.maps.LatLng(window.result[i].gsx$latitude.$t, window.result[i].gsx$longitude.$t);
-            //     distances[i] = distanceTwoPoints(userLocation, franchiseLocation);
-            // }
+            for (var i = 0; i < window.result.length; i++) {
+                var franchiseLocation = new google.maps.LatLng(window.result[i].gsx$latitude.$t, window.result[i].gsx$longitude.$t);
+                distances[i] = distanceTwoPoints(userLocation, franchiseLocation);
+            }
             
-            // distancesSorted = Array.prototype.slice.call(distances).sort(function(a,b) { return a - b;});  
-            // clearFranchisesList();
-            // for(var i=0;i<distances.length;i++) {
-            //     var index = distances.indexOf(distancesSorted[i]);
-            //     addFranchiseToList(window.result[index]);
-            // }
+            distancesSorted = Array.prototype.slice.call(distances).sort(function(a,b) { return a - b;});  
+            clearFranchisesList();
+            for(var i=0;i<distances.length;i++) {
+                var index = distances.indexOf(distancesSorted[i]);
+                addFranchiseToList(window.result[index]);
+            }
 
-            // var index = distances.indexOf(distancesSorted[0]);
+            var index = distances.indexOf(distancesSorted[0]);
             legendCenter(window.result[index].gsx$latitude.$t, window.result[0].gsx$longitude.$t);
             
             
