@@ -175,7 +175,7 @@
             request.onload = function() {
               if (this.status >= 200 && this.status < 400) {
                 var data = JSON.parse(this.response);
-                window.result = data.feed.entry.slice(450);
+                window.result = data.feed.entry;
                 if ($(window).width() > 480) {
                    initMap(); 
                 }
@@ -349,7 +349,7 @@
 
         for (var i = 0; i < result.length; i++) {
             var name = row[i].gsx$loja.$t + " - " + row[i].gsx$cidade.$t + " - " + row[i].gsx$estado.$t;
-            var contentString = `<h4 class='font-small-3'>Continental - ${row[i].gsx$loja.$t}</h4>` + `<p class="font-small-1 mb-3 address" data-lat="${row[i].gsx$latitude.$t}" data-lng="${row[i].gsx$longitude.$t}"><i class="fas fa-map-marker-alt"></i> ${row[i].gsx$endereço.$t}</p>` + createActionRow(row[i]);
+            var contentString = "<h4 class='font-small-3'>Teste</h4>";
             var geoTarget = row[i].gsx$geotarget.$t;
             var infowindow = new google.maps.InfoWindow();
             var latLng = new google.maps.LatLng(row[i].gsx$latitude.$t, row[i].gsx$longitude.$t);
